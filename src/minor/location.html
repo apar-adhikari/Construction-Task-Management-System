@@ -1,0 +1,158 @@
+<html>
+<head>
+<title>Take 4</title>
+<style>
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      #map {
+        height: 100%;
+      }
+	  #floating-panel{
+		position: absolute;top: 10px;left: 40%;z-index: 5;color: #fff;background-color: #2874A6;padding: 5px;border: 0px solid #999;text-align: center;font-family: 'Roboto','sans-serif';line-height: 30px;padding-left: 10px;
+	  }
+	  .opt{
+		color: #fff;
+		background-color: #3498DB;
+	  }
+	  #floating-panel1{
+		position: absolute;top: 10px;left: 80%;z-index: 5;color: #fff;background-color: #B03A2E;padding: 5px;border: 0px solid #999;text-align: center;font-family: 'Roboto','sans-serif';line-height: 30px;padding-left: 10px;cursor: pointer;box-shadow: 2px 5px #999;
+	  }
+	  #floating-panel1:hover{
+		background-color: #EC7063;
+	  }
+	  #floating-panel1:active{
+		background-color: #B03A2E;box-shadow: 1px 2px #666;transform: translateY(4px);
+	  }
+	  #floating-panel2{
+		position: absolute;
+		top: 80%;
+		left: 30%;
+		z-index: 5;
+		color: #fff;
+		background-color: #2874A6;
+		padding: 5px;
+		border: 0px solid #999;
+		text-align: center;
+		visibility: hidden;
+		line-height: 10px;
+	  }
+    </style>
+	
+</head>
+
+<body>
+<div id="map"></div>
+    
+<div id="floating-panel"><b>Search : </b>
+<select id="search_for" class="opt" onchange="onChangeHandler()">
+<option value="none">     <center>-<center>        </option>
+<option value="construction companies">Construction companies</option>
+<option value="hardware store">Hardware Stores</option>
+<option value="paint supplier">Paint Suppliers</option>
+</select>
+</div>	
+	<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBv9kCi-uaZxodT_zfN6_xBZpdhjVSf5F0&libraries=places&callback=initMap" async defer>//Loads api</script>
+<button type="button" id="floating-panel1" onclick="onClickHandler()">Locate my location</button>
+<div id="floating-panel2"><p>Please click anywhere on the map to select your location</p></div>
+	
+<script>
+	var mapp;
+	var showdetails;
+	var resultlocations;
+	var currentloc;
+	var marker = [];
+	var cmarker;
+	var flag;
+
+	// Initializing all the components required for the map
+	function initMap(){
+		currentloc = new google.maps.LatLng(27.669182,85.353073); // Default current location on start up
+		
+		mapp = new google.maps.Map(document.getElementById('map'),{
+			center : currentloc,
+			zoom : 14
+		});	// Loads the google map
+		
+		cmarker = new google.maps.Marker({
+			map : null,
+			position : currentloc,
+			icon : 'https://developers.google.com/maps/documentation/javascript/examples/full/images/beachflag.png'
+		});
+		
+		showdetails = new google.maps.InfoWindow(); // For details on the markers .... used in function plotmarkers()
+        
+	
+	}
+	
+	// To handle when an option is choose from the given drop down list
+	function onChangeHandler(){
+		if (document.getElementById('search_for').value != 'none'){
+			clearMarkers();
+			var service = new google.maps.places.PlacesService(mapp); // Returns places on the basis of queries
+				service.textSearch({
+				location: currentloc,
+				radius: 1000,
+				query: document.getElementById('search_for').value // Search Query
+			}, callback);
+		}
+	}
+	
+	// To handle after 'Locate my location' button is clicked
+	function onClickHandler(){	
+			document.getElementById("floating-panel2").style.visibility = "visible";
+			flag = true;
+			clearMarkers(); // Clear all the markers on the map
+			cmarker.setMap(null); // Clears the current location marker 
+			var clickListener = mapp.addListener('click', function(event) {
+				if (flag){ // To avoid repetitive clicking of my Location
+					currentloc = event.latLng;
+					mapp.setCenter(currentloc);
+					cmarker.setPosition(currentloc);
+					cmarker.setMap(mapp);
+					cmarker.setIcon('https://developers.google.com/maps/documentation/javascript/examples/full/images/beachflag.png');
+					document.getElementById("floating-panel2").style.visibility = "hidden";
+					flag = false;
+				}
+			});
+	}
+	
+	function callback(resultlocations,status){  // To handle the response received after requesting Places Service			
+		if(status === google.maps.places.PlacesServiceStatus.OK){
+			for (var i=0;i<resultlocations.length;i++){
+				plotmarkers(resultlocations[i],i);
+			}
+		}else{
+			alert("Failed");
+		}
+	}
+		
+	function plotmarkers(place,i){	// Creates markers on the required locations on the map
+		var placeLoc = place.geometry.location;
+		marker[i] = new google.maps.Marker({
+			map : mapp,
+			position : placeLoc,
+			animation : google.maps.Animation.DROP
+		});
+
+		// To show details of the marker after clicking on it
+		google.maps.event.addListener(marker[i], 'click', function() {
+		showdetails.setContent(place.name+'<br>'+place.formatted_address);
+		showdetails.open(mapp, this);
+		});
+	}
+	
+	function clearMarkers(){ // Deletes markers from the map
+		for (var i=0;i<marker.length;i++){
+			marker[i].setMap(null);
+		}
+		marker = [];
+	}
+	
+</script>
+	
+</body>
+
+</html>
